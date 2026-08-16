@@ -14,7 +14,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&amp;display=swap" rel="stylesheet">
 <script defer="" src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <style>
  body {
   -webkit-user-select: none; /* Safari */
@@ -662,7 +663,7 @@ body{text-rendering:optimizeSpeed}
 <div class="hdr"><button class="back" onclick="leaveHome()">↩ رجوع</button><h1>غرفة أونلاين</h1></div>
 <div class="card">
 <div class="pc-ready" id="roomGameType">نوع اللعبة: ⚽ مزاد النجوم</div>
-<input id="createPass" type="password" placeholder="🔒 كلمة سر للغرفة (إجباري)" maxlength="20" required style="text-align:center;margin-bottom:8px">
+<input id="createPass" placeholder="🔒 كلمة سر للغرفة" maxlength="20" style="text-align:center;margin-bottom:8px">
 <button class="big-btn green" onclick="createRoom()">➕ إنشاء غرفة جديدة</button>
 <div id="codeBox" class="hidden">رمز الغرفة:<div id="codeShow"></div><button class="big-btn goldb" style="margin-top:6px" onclick="shareRoomCode()">📤 شارك الرمز</button></div>
 
@@ -3018,25 +3019,244 @@ function setView(v){
    بدل الاتصال المباشر بين الجهازين (P2P) اللي بيفشل على شبكات كتير،
    كل الرسائل بتمر عبر سيرفر ويب-سوكِت ثابت. يعني الاتصال بيشتغل
    مهما كانت المسافة أو نوع الشبكة أو الجوال، وبيرجع لوحده لو النت قطع. */
-var SB_URL='https://itdtszwmjiwcalhruric.supabase.co';
-var SB_KEY='sb_publishable_kNTkcktZDOcm36anGPz4wA_FHIFXp7k';
+var SB_URL='https://el-mazad132-default-rtdb.europe-west1.firebasedatabase.app/';
+var SB_KEY=''; /* Firebase Realtime Database لا يحتاج SB_KEY */
 var sbc=null;
-function sbLib(){return (typeof window!=='undefined'&&window.supabase&&window.supabase.createClient)?window.supabase:null;}
+var firebaseApp=null;
+var firebaseDb=null;
+
+var firebaseConfig={
+ apiKey:"AIzaSyDeXlxhf_fmwsCvCebkmA4TgDZAE7EleWM",
+ authDomain:"el-mazad132.firebaseapp.com",
+ databaseURL:"https://el-mazad132-default-rtdb.europe-west1.firebasedatabase.app/",
+ projectId:"el-mazad132",
+ storageBucket:"el-mazad132.firebasestorage.app",
+ messagingSenderId:"514282913100",
+ appId:"1:514282913100:web:4ac41f7adf8346fcbf23e9"
+};
+
+function sbLib(){
+ return (typeof window!=='undefined'&&window.firebase&&window.firebase.database)?window.firebase:null;
+}
 function sbReady(){return !!sbLib();}
+function firebaseInit(){
+ if(firebaseApp)return firebaseApp;
+ var F=sbLib();if(!F)return null;
+ try{
+  firebaseApp=F.apps&&F.apps.length?F.app():F.initializeApp(firebaseConfig);
+  firebaseDb=F.database(firebaseApp);
+ }catch(e){console.error('Firebase init error',e);return null;}
+ return firebaseApp;
+}
+
+/* ===== Firebase Realtime Database compatibility layer =====
+   يحافظ على نفس أسماء الدوال القديمة في اللعبة، لكن كل البيانات أصبحت
+   على Firebase بدل Firebase. */
+function FirebaseChannel(name){
+ this.name=name;
+ this.base='channels/'+encodeURIComponent(name);
+ this.callbacks={};
+ this.presenceCallbacks={sync:[],join:[],leave:[]};
+ this.presenceCache={};
+ this.presenceRefs={};
+ this.msgRef=null;
+ this.presRef=null;
+ this.subscribed=false;
+ this.dead=false;
+ this.tableWatches=[];
+}
+FirebaseChannel.prototype.on=function(type,filter,cb){
+ if(type==='broadcast'){
+  var ev=filter&&filter.event;
+  if(ev){
+   (this.callbacks[ev]=this.callbacks[ev]||[]).push(cb);
+  }
+ }else if(type==='presence'){
+  var ev2=filter&&filter.event;
+  if(ev2&&(this.presenceCallbacks[ev2])){
+   this.presenceCallbacks[ev2].push(cb);
+  }
+ }else if(type==='postgres_changes'){
+  var table=filter&&filter.table;
+  var self=this;
+  if(table){
+   var ref=firebaseInit()&&firebaseDb?firebaseDb.ref('db/'+table):null;
+   if(ref){
+    var handler=function(snap){
+     var val=snap.val();
+     if(val&&typeof val==='object'){
+      Object.keys(val).forEach(function(k){
+       var row=val[k];
+       if(!row)return;
+       if(filter.filter){
+        var m=String(filter.filter).match(/^([^=]+)=eq\.(.*)$/);
+        if(m&&String(row[m[1]])!==m[2])return;
+       }
+       try{cb({new:row,old:null});}catch(e){}
+      });
+     }
+    };
+    ref.on('value',handler);
+    this.tableWatches.push({ref:ref,handler:handler});
+   }
+  }
+ }
+ return this;
+};
+FirebaseChannel.prototype.subscribe=function(cb){
+ var self=this,db=firebaseInit()&&firebaseDb;
+ if(!db){if(cb)cb('CHANNEL_ERROR');return this;}
+ this.msgRef=db.ref(this.base+'/messages');
+ this.presRef=db.ref(this.base+'/presence');
+
+ this.msgRef.on('child_added',function(snap){
+  var m=snap.val();
+  if(!m||m.from===myCid||self.dead)return;
+  var ev=m.event||'m';
+  var arr=self.callbacks[ev]||[];
+  arr.forEach(function(fn){try{fn({payload:m.payload});}catch(e){}});
+ });
+
+ this.presRef.on('value',function(snap){
+  if(self.dead)return;
+  var v=snap.val()||{};
+  var old=self.presenceCache;
+  self.presenceCache=v;
+  if(!self.subscribed){
+   self.subscribed=true;
+   (self.presenceCallbacks.sync||[]).forEach(function(fn){try{fn();}catch(e){}});
+   if(cb)cb('SUBSCRIBED');
+   return;
+  }
+  (self.presenceCallbacks.sync||[]).forEach(function(fn){try{fn();}catch(e){}});
+  var before=Object.keys(old),after=Object.keys(v);
+  after.forEach(function(k){
+   if(!old[k]){
+    (self.presenceCallbacks.join||[]).forEach(function(fn){try{fn({key:k,newPresences:[v[k]]});}catch(e){}});
+   }
+  });
+  before.forEach(function(k){
+   if(!v[k]){
+    (self.presenceCallbacks.leave||[]).forEach(function(fn){try{fn({key:k});}catch(e){}});
+   }
+  });
+ });
+ return this;
+};
+FirebaseChannel.prototype.track=function(data){
+ var db=firebaseInit()&&firebaseDb;
+ if(!db||this.dead)return Promise.reject('firebase');
+ var ref=db.ref(this.base+'/presence/'+encodeURIComponent(myCid));
+ var val={};
+ Object.keys(data||{}).forEach(function(k){val[k]=data[k];});
+ val.c=myCid;
+ this.presenceRefs[myCid]=ref;
+ ref.set(val);
+ try{ref.onDisconnect().remove();}catch(e){}
+ this.presenceCache[encodeURIComponent(myCid)]=val;
+ return Promise.resolve();
+};
+FirebaseChannel.prototype.untrack=function(){
+ var db=firebaseInit()&&firebaseDb;
+ if(!db)return Promise.resolve();
+ return db.ref(this.base+'/presence/'+encodeURIComponent(myCid)).remove();
+};
+FirebaseChannel.prototype.presenceState=function(){
+ var out={};
+ Object.keys(this.presenceCache||{}).forEach(function(k){
+  var v=this.presenceCache[k];
+  out[k]=[v];
+ },this);
+ return out;
+};
+FirebaseChannel.prototype.send=function(msg){
+ var db=firebaseInit()&&firebaseDb;
+ if(!db||this.dead)return Promise.reject('firebase');
+ var ref=db.ref(this.base+'/messages').push();
+ var payload=msg&&msg.payload!==undefined?msg.payload:null;
+ var event=msg&&msg.event?msg.event:'m';
+ var self=this;
+ return ref.set({from:myCid,event:event,payload:payload,ts:Date.now()}).then(function(){
+  setTimeout(function(){try{ref.remove();}catch(e){}},60000);
+ });
+};
+FirebaseChannel.prototype.close=function(){
+ if(this.dead)return;
+ this.dead=true;
+ try{if(this.msgRef)this.msgRef.off();}catch(e){}
+ try{if(this.presRef)this.presRef.off();}catch(e){}
+ try{this.untrack();}catch(e){}
+ this.tableWatches.forEach(function(w){try{w.ref.off('value',w.handler);}catch(e){}});
+ this.tableWatches=[];
+};
+
+function FirebaseTable(table){
+ this.table=table;
+ this.filters=[];
+ this.limitN=null;
+ this.mode='select';
+ this.deleteMode=false;
+}
+FirebaseTable.prototype.select=function(){this.mode='select';return this;};
+FirebaseTable.prototype.upsert=function(row){
+ var db=firebaseInit()&&firebaseDb;
+ if(!db)return Promise.reject('firebase');
+ var key='';
+ if(row&&row.code)key=String(row.code);
+ else if(row&&row.cycle&&row.name)key=String(row.cycle)+'__'+String(row.name);
+ else key=String(row&&row.name||row&&row.id||Date.now());
+ key=encodeURIComponent(key);
+ return db.ref('db/'+this.table+'/'+key).set(row).then(function(){return {data:row,error:null};});
+};
+FirebaseTable.prototype.eq=function(k,v){this.filters.push({k:k,v:String(v)});return this;};
+FirebaseTable.prototype.limit=function(n){this.limitN=n;return this;};
+FirebaseTable.prototype.maybeSingle=function(){this._single=true;return this._execute();};
+FirebaseTable.prototype.delete=function(){this.deleteMode=true;return this;};
+FirebaseTable.prototype.then=function(resolve,reject){return this._execute().then(resolve,reject);};
+FirebaseTable.prototype._execute=function(){
+ var self=this,db=firebaseInit()&&firebaseDb;
+ if(!db)return Promise.reject('firebase');
+ return db.ref('db/'+this.table).once('value').then(function(snap){
+  var v=snap.val()||{},rows=[];
+  Object.keys(v).forEach(function(k){
+   var row=v[k];if(!row)return;
+   var ok=self.filters.every(function(f){return String(row[f.k])===String(f.v);});
+   if(ok)rows.push(row);
+  });
+  if(self.deleteMode){
+   var ops=[];
+   Object.keys(v).forEach(function(k){
+    var row=v[k];
+    var ok=self.filters.every(function(f){return String(row&&row[f.k])===String(f.v);});
+    if(ok)ops.push(db.ref('db/'+self.table+'/'+k).remove());
+   });
+   return Promise.all(ops).then(function(){return {data:null,error:null};});
+  }
+  if(self.limitN!=null)rows=rows.slice(0,self.limitN);
+  return {data:self._single?(rows[0]||null):rows,error:null};
+ });
+};
+
 function sbClient(){
+ firebaseInit();
  if(sbc)return sbc;
- var L=sbLib();if(!L)return null;
- sbc=L.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},realtime:{params:{eventsPerSecond:20}}});
+ sbc={
+  channel:function(name){return new FirebaseChannel(name);},
+  removeChannel:function(ch){try{ch.close();}catch(e){}return Promise.resolve();},
+  from:function(table){return new FirebaseTable(table);}
+ };
  return sbc;
 }
-/* تسخين السوكِت من أول ما الصفحة تفتح: كده لما تدوس اتصال بيبقى الاتصال جاهز فورًا */
+
+/* تسخين Firebase من أول ما الصفحة تفتح */
 var sbWarmT=null;
 function sbWarm(){
  var c=sbClient();
  if(!c){sbWarmT=setTimeout(sbWarm,300);return;}
- try{if(c.realtime&&!c.realtime.isConnected())c.realtime.connect();}catch(e){}
 }
 try{sbWarm();window.addEventListener('online',sbWarm);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')sbWarm();});}catch(e){}
+
+
 /* ========= تصنيف المتصدرين (Leaderboard) =========
    كل فوز حقيقي (مش ضد الحاسوب) في مزاد النجوم أو صناديق الحظ بيسجل نقط.
    ما بيحتاجش أي إعداد أو جدول تعمله بنفسك: النقط بتتخزن على جهازك
@@ -3373,7 +3593,7 @@ var myCid=null;
 try{myCid=localStorage.getItem('mz_cid');if(!myCid){myCid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('mz_cid',myCid);}}catch(e){myCid=Math.random().toString(36).slice(2);}
 function netClose(){
  try{if(netCh&&netCh._kill)netCh._kill();}catch(e){}
- try{if(netCh&&netCh._ch&&sbClient())sbClient().removeChannel(netCh._ch);}catch(e){}
+ try{if(netCh&&sbClient())sbClient().removeChannel(netCh);}catch(e){}
  netCh=null;
 }
 function netHeartbeat(){
@@ -3385,43 +3605,36 @@ function makeNetConn(code,host,opts){
  var c=sbClient();
  if(!c){if(opts.onFail)opts.onFail('lib');return null;}
  var role=host?'h':'g',other=host?'g':'h';
- var H={},opened=false,waitTimer=null,subTimer=null,dead=false,bound=null,myT=Date.now(),busy=false;
- var hbN=0,hbInt=null,seen={},lastTrackAt=0;
- /* مقعد محجوز من جهاز تاني = لازم نتأكد إنه لسه حيّ فعلًا (مش أثر قديم في السيرفر) */
- function aliveState(e){
-  var k=e.c,now=Date.now(),g=seen[k];
-  if(!g){seen[k]={n:e.n||0,since:now,live:false};return null;}
-  if((e.n||0)!==g.n){g.n=e.n||0;g.live=true;}
-  if(g.live)return true;
-  if(now-g.since>7000)return false;
-  return null;
- }
+ var H={},opened=false,waitTimer=null,dead=false,bound=null,myT=Date.now(),busy=false;
+ var hbN=0,seen={};
+
  function fire(e,a){var l=H[e]||[];for(var i=0;i<l.length;i++){try{l[i](a);}catch(_){}}}
  var shim={
   open:false,peerCode:code,cid:myCid,
   on:function(e,f){(H[e]=H[e]||[]).push(f);return shim;},
-  send:function(o){if(dead)return;try{ch.send({type:'broadcast',event:'m',payload:{f:role,c:myCid,d:o}});}catch(e){}},
-  close:function(){/* إغلاق ناعم: القناة بتفضل قايمة عشان الرجوع التلقائي يبقى فوري */
-   clearCloseGrace();
-   if(!shim.open)return;shim.open=false;opened=false;fire('close');
-   if(host&&netCh===shim){conn=shim;}
+  send:function(o){
+   if(dead)return;
+   try{ch.send({event:'m',payload:{f:role,c:myCid,d:o}});}catch(e){}
+  },
+  close:function(){
+   if(!shim.open)return;
+   shim.open=false;opened=false;fire('close');
   }
  };
+
+ var CH_TOPIC='mzaida-'+code;
+ var ch=c.channel(CH_TOPIC);
+ shim._ch=ch;
+
  function markOpen(cid){
   if(dead||busy)return;
   if(cid){if(bound&&bound!==cid)return;bound=cid;}
   if(opened)return;
   opened=true;shim.open=true;clearTimeout(waitTimer);
   if(netCh===shim)conn=shim;
-  lastRx=Date.now();netHeartbeat();
-  fire('open');
+  lastRx=Date.now();netHeartbeat();fire('open');
  }
- /* اتصال أقوى: نفس اسم القناة للطرفين + إعادة اشتراك تلقائية عند أي تعطل،
-    ورجوع فوري لما النت يرجع أو التطبيق يفتح تاني */
- var subRetry=0,recovering=false;
- var CH_TOPIC='mzaida-'+code;
- function newChannel(){return c.channel(CH_TOPIC,{config:{broadcast:{self:false,ack:false},presence:{key:myCid}}});}
- var ch=newChannel();
+
  function seats(){
   var st={};try{st=ch.presenceState()||{};}catch(e){return null;}
   var mine=[],theirs=[];
@@ -3430,27 +3643,27 @@ function makeNetConn(code,host,opts){
    for(var i=0;i<arr.length;i++){
     var e=arr[i];if(!e||!e.c)continue;
     if(e.c===myCid)continue;
-    if(e.r===role)mine.push(e); else if(e.r===other)theirs.push(e);
+    if(e.r===role)mine.push(e);else if(e.r===other)theirs.push(e);
    }
   });
   mine.sort(function(a,b){return (a.t||0)-(b.t||0);});
   theirs.sort(function(a,b){return (a.t||0)-(b.t||0);});
   return {mine:mine,theirs:theirs};
  }
+
  var closeGraceTimer=null;
  function clearCloseGrace(){if(closeGraceTimer){clearTimeout(closeGraceTimer);closeGraceTimer=null;}}
  function checkPresence(){
   if(dead||busy)return;
   var s=seats();if(!s)return;
   if(s.mine.length&&(s.mine[0].t||0)<myT){
-   var al=aliveState(s.mine[0]);
-   if(al===true){
+   var al=seen[s.mine[0].c];
+   if(al&&Date.now()-al.last<7000){
     busy=true;
     try{ch.untrack();}catch(e){}
     if(opts.onBusy)opts.onBusy();
     return;
    }
-   if(al===null){if(opts.onChecking)opts.onChecking();return;}
   }
   if(s.theirs.length){
    clearCloseGrace();
@@ -3459,106 +3672,80 @@ function makeNetConn(code,host,opts){
    bound=partner;
    markOpen(partner);
    if(opts.onPeer)opts.onPeer(partner);
-  }else if(opened){
-   /* لو الخصم اختفى من الحضور فجأة، ده غالبًا لاق مؤقت في السيرفر مش انفصال حقيقي.
-      منستناش نقفل الاتصال على طول — بننتظر شوية ونتأكد إنه فعلاً مش راجع قبل ما نعلن الانقطاع،
-      عشان منوقفش نقول "جار الاتصال" ونسيب اللاعب التاني يفضل شغال. */
-   if(!closeGraceTimer){
-    closeGraceTimer=setTimeout(function(){
-     closeGraceTimer=null;
-     if(dead||busy||!opened)return;
-     var s2=seats();
-     if(s2&&s2.theirs.length){checkPresence();return;}
-     opened=false;shim.open=false;fire('close');
-     if(host&&netCh===shim)conn=shim;
-    },3000);
-   }
-  }
- }
- function onStatus(status){
-  if(dead)return;
-  if(status==='SUBSCRIBED'){
-   shim._sub=true;subRetry=0;recovering=false;clearTimeout(subTimer);
-   myT=Date.now();
-   try{ch.track({r:role,c:myCid,t:myT,n:hbN});}catch(e){}
-   clearInterval(hbInt);
-   hbInt=setInterval(function(){
-    if(dead||busy){clearInterval(hbInt);return;}
-    hbN++;
-    try{ch.track({r:role,c:myCid,t:myT,n:hbN});}catch(e){}
-    checkPresence();
+  }else if(opened&&!closeGraceTimer){
+   closeGraceTimer=setTimeout(function(){
+    closeGraceTimer=null;
+    if(dead||busy||!opened)return;
+    var s2=seats();
+    if(s2&&s2.theirs.length){checkPresence();return;}
+    opened=false;shim.open=false;fire('close');
    },3000);
-   if(opts.onReady)opts.onReady(shim);
-   /* سلام فوري: أي طرف بيسمعه يفتح الاتصال على طول من غير انتظار مزامنة الحضور */
-   try{shim.send({type:'__hs',r:role});}catch(e){}
-   [80,320,900].forEach(function(ms){setTimeout(function(){if(!opened&&!dead&&!busy)try{shim.send({type:'__hs',r:role});}catch(e){}},ms);});
-   checkPresence();
-   setTimeout(checkPresence,100);
-   setTimeout(checkPresence,500);
-   setTimeout(checkPresence,1100);
-   if(!host){clearTimeout(waitTimer);waitTimer=setTimeout(function(){if(!opened&&!busy&&!shim.open&&opts.onNoHost)opts.onNoHost();},2800);}
-  }else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){
-   clearTimeout(subTimer);
-   /* قبل كده كنا بنتجاهل أول CLOSED لو مفيش resubscribe شغال بالفعل،
-      وده كان بيسيب الاتصال ميت للأبد من غير أي إعادة محاولة (الشاشة تفضل
-      عالقة على "جارٍ الاتصال" للأبد). دلوقتي بنحاول نعيد الاشتراك دايمًا
-      طالما القناة لسه حية (dead=false) — التدمير المتعمد بيتلقط أصلاً
-      من فحص dead في أول onStatus. */
-   resubscribe(status);
   }
  }
- function bindCh(){
-  ch.on('broadcast',{event:'m'},function(m){
-   var p=m&&m.payload;if(!p||dead||busy)return;
-   if(p.c===myCid)return;
-   if(p.f===role)return;
-   /* الغرفة لاعبين بس: لو المضيف مربوط بضيف، أي ضيف تالت يتم رفضه فورًا */
-   if(p.d&&p.d.type==='__full'&&!host){
-    if(!busy&&(!p.to||p.to===myCid)){busy=true;try{ch.untrack();}catch(e){}if(opts.onBusy)opts.onBusy();}
-    return;
+
+ ch.on('broadcast',{event:'m'},function(m){
+  var p=m&&m.payload;if(!p||dead||busy)return;
+  if(p.c===myCid)return;
+  if(p.f===role)return;
+  if(p.d&&p.d.type==='__full'&&!host){
+   if(!busy&&(!p.to||p.to===myCid)){busy=true;try{ch.untrack();}catch(e){}if(opts.onBusy)opts.onBusy();}
+   return;
+  }
+  if(bound&&p.c&&p.c!==bound){
+   if(host){
+    try{ch.send({event:'m',payload:{f:role,c:myCid,to:p.c,d:{type:'__full'}}});}catch(e){}
    }
-   if(bound&&p.c&&p.c!==bound){
-    if(host){try{ch.send({type:'broadcast',event:'m',payload:{f:role,c:myCid,to:p.c,d:{type:'__full'}}});}catch(e){}}
-    return;
-   }
-   markOpen(p.c);lastRx=Date.now();
-   if(p.d&&p.d.type==='__hs'){try{shim.send({type:'__hs',r:role});}catch(e){}return;}
-   fire('data',p.d);
-  });
-  ch.on('presence',{event:'sync'},checkPresence);
-  ch.on('presence',{event:'join'},checkPresence);
-  ch.on('presence',{event:'leave'},checkPresence);
- }
- function resubscribe(reason){
-  if(dead||busy||recovering)return;
-  if(subRetry>=10){if(opts.onFail)opts.onFail(reason||'error');return;}
-  recovering=true;subRetry++;shim._sub=false;
-  var wait=Math.min(900,80+subRetry*120)+Math.floor(Math.random()*140);
-  setTimeout(function(){
-   if(dead||busy){recovering=false;return;}
-   try{c.removeChannel(ch);}catch(e){}
-   ch=newChannel();shim._ch=ch;bindCh();
-   recovering=false;
-   try{ch.subscribe(onStatus);}catch(e){recovering=false;setTimeout(function(){resubscribe('retry');},700);}
-  },wait);
- }
- bindCh();
- subTimer=setTimeout(function(){if(!dead&&!shim._sub)resubscribe('slow');},3500);
- ch.subscribe(onStatus);
- /* رجوع تلقائي فوري بعد انقطاع النت أو رجوع التطبيق من الخلفية */
- function wake(){
-  if(dead||busy)return;
-  if(!shim._sub){resubscribe('wake');return;}
+   return;
+  }
+  markOpen(p.c);lastRx=Date.now();
+  if(p.d&&p.d.type==='__hs'){try{shim.send({type:'__hs',r:role});}catch(e){}return;}
+  fire('data',p.d);
+ });
+
+ ch.on('presence',{event:'sync'},checkPresence);
+ ch.on('presence',{event:'join'},checkPresence);
+ ch.on('presence',{event:'leave'},checkPresence);
+
+ ch.subscribe(function(status){
+  if(status!=='SUBSCRIBED'){if(opts.onFail)opts.onFail(status||'error');return;}
+  myT=Date.now();
+  try{ch.track({r:role,c:myCid,t:myT,n:hbN});}catch(e){}
+  if(opts.onReady)opts.onReady(shim);
+  try{shim.send({type:'__hs',r:role});}catch(e){}
+  [80,320,900].forEach(function(ms){setTimeout(function(){if(!opened&&!dead&&!busy)try{shim.send({type:'__hs',r:role});}catch(e){}},ms);});
+  checkPresence();
+  setTimeout(checkPresence,150);
+  setTimeout(checkPresence,600);
+  setTimeout(checkPresence,1200);
+  if(!host){
+   clearTimeout(waitTimer);
+   waitTimer=setTimeout(function(){
+    if(!opened&&!busy&&!shim.open&&opts.onNoHost)opts.onNoHost();
+   },3500);
+  }
+ });
+
+ var hbInt2=setInterval(function(){
+  if(dead||busy){clearInterval(hbInt2);return;}
   hbN++;
   try{ch.track({r:role,c:myCid,t:myT,n:hbN});}catch(e){}
   checkPresence();
+ },3000);
+
+ function wake(){
+  if(dead||busy)return;
+  try{ch.track({r:role,c:myCid,t:myT,n:++hbN});checkPresence();}catch(e){}
  }
  var wakeVis=function(){if(document.visibilityState==='visible')wake();};
  try{window.addEventListener('online',wake);document.addEventListener('visibilitychange',wakeVis);}catch(e){}
- shim._kill=function(){dead=true;clearTimeout(waitTimer);clearTimeout(subTimer);clearCloseGrace();clearInterval(hbInt);try{window.removeEventListener('online',wake);document.removeEventListener('visibilitychange',wakeVis);}catch(e){}try{ch.untrack();}catch(e){}};
+
+ shim._kill=function(){
+  dead=true;clearTimeout(waitTimer);clearCloseGrace();clearInterval(hbInt2);
+  try{window.removeEventListener('online',wake);document.removeEventListener('visibilitychange',wakeVis);}catch(e){}
+  try{ch.close();}catch(e){}
+ };
  return shim;
 }
-
 /* ========= الاتصال (PeerJS) ========= */
 var peerMgr=null,autoRejoin=null,rejoinTries=0,lastRx=0,watchdog=null;
 function stopPeerMgr(){try{if(peerMgr)peerMgr.stop();}catch(e){}peerMgr=null;}
@@ -3580,13 +3767,13 @@ function shareRoomCode(){
 function createRoom(){
  if(!sbReady())return toast('جارٍ تحميل السيرفر… انتظر ثانية وجرّب تاني');
  roomPass=(($('createPass')&&$('createPass').value)||'').trim();
-  if(!roomPass){
-   toast('🔒 لازم تحط كلمة سر قبل إنشاء الغرفة');
-   try{$('createPass').classList.add('err-input');$('createPass').focus();}catch(e){}
-   return;
-  }
-  try{$('createPass').classList.remove('err-input');}catch(e){}
-  isPublicRoom=true;
+ if(!roomPass){
+  toast('🔒 لازم تحط كلمة سر قبل إنشاء الغرفة');
+  try{$('createPass').classList.add('err-input');$('createPass').focus();}catch(e){}
+  return;
+ }
+ try{$('createPass').classList.remove('err-input');}catch(e){}
+ isPublicRoom=true;
  setStatus('جارٍ إنشاء الغرفة…');isHost=true;mySeat=0;roomFull=false;guestCid='';roomCode=makeCode();savedCode=roomCode;
  netClose();stopPeerMgr();
  conn=netCh=makeNetConn(roomCode,true,{
@@ -3690,7 +3877,7 @@ function lobbyVisible(){var el=$('lobby');return !!el&&!el.classList.contains('h
 function lobbyJoinCh(){
  if(lobbyCh)return lobbyCh;
  var c=sbClient();if(!c)return null;
- var ch=c.channel(LOBBY_TOPIC,{config:{presence:{key:myCid}}});
+ var ch=c.channel(LOBBY_TOPIC);
  lobbyCh=ch;lobbyChSub=false;
  ch.on('presence',{event:'sync'},lobbyCollect);
  ch.on('presence',{event:'join'},lobbyCollect);
@@ -3710,31 +3897,8 @@ function lobbyJoinCh(){
 function lobbyLeaveCh(){
  if(!lobbyCh)return;
  try{lobbyCh.untrack();}catch(e){}
- try{var c=sbClient();if(c)c.removeChannel(lobbyCh);}catch(e){}
+ try{sbClient().removeChannel(lobbyCh);}catch(e){}
  lobbyCh=null;lobbyChSub=false;
-}
-function lobbyMaybeLeave(){if(!lobbyMine&&!lobbyVisible())lobbyLeaveCh();}
-function lobbyCollect(){
- var rooms=[],seen={},now=Date.now();
- if(lobbyCh){
-  var st={};try{st=lobbyCh.presenceState()||{};}catch(e){st={};}
-  Object.keys(st).forEach(function(k){
-   var arr=st[k]||[];
-   for(var i=0;i<arr.length;i++){
-    var r=arr[i];
-    if(!r||!r.code)continue;
-    if(r.full)continue;/* غرفة ممتلئة (2/2) متتعرضش */
-    if(lobbyDead[r.code]&&now-lobbyDead[r.code]<60000)continue;/* غرفة اتقفلت أو اتملت */
-    if(roomCode&&r.code===roomCode)continue;/* متستبعدش غرفتك من نفسك */
-    if(r.ts&&now-r.ts>ROOM_TTL_MS)continue;
-    if(seen[r.code])continue;
-    seen[r.code]=1;rooms.push(r);
-   }
-  });
- }
- rooms.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
- lobbyLastRooms=rooms;
- if(lobbyVisible())renderLobbyList(null,false,rooms);
 }
 function lobbyDropRoom(code){
  lobbyLastRooms=lobbyLastRooms.filter(function(r){return r.code!==code;});
@@ -4044,7 +4208,7 @@ function renderTimerBar(){
  }
 }
 /* بث خفيف لرقم العداد بس (بدل بث كل حالة اللعبة كل ربع ثانية) — بيقلل حجم البيانات
-   المرسلة عبر سيرفر المزامنة (Supabase) بشكل كبير جدًا */
+   المرسلة عبر سيرفر المزامنة (Firebase) بشكل كبير جدًا */
 function broadcastTick(){
  if(!(online&&isHost&&conn&&conn.open))return;
  try{conn.send({type:'T',t:timeLeft});}catch(e){}
@@ -5486,7 +5650,7 @@ function dismissOnbTip(){
 <script>
 /* ================= نظام البطولات (Tournaments) =================
    بطولة أونلاين حقيقية: كود بطولة + كلمة سر + قرعة عشوائية + مباريات
-   إقصائية بين اللاعبين على السيرفر (Supabase Realtime).
+   إقصائية بين اللاعبين على السيرفر (Firebase Realtime).
    المضيف هو صاحب الحالة (state) وبيبثها لكل المشتركين. */
 var TOUR=null,TOURCH=null,TOURCH_SUB=false,TOURMATCH=null,tourStateInt=null,tourSearchT=null;
 var tourSet={n:4,gt:'auction',timer:20,budget:500,persist:1},tourPassInput='';
@@ -6297,7 +6461,7 @@ try{window.addEventListener('pagehide',function(){
 });}catch(e){}
 
 
-/* ========= Lovable Cloud: تخزين دائم على السيرفر =========
+/* ========= Firebase Cloud: تخزين دائم على السيرفر =========
    - التصنيف بيتخزن في جدول leaderboard (مقسّم حسب دورة الأسبوع)،
      فمفيش تصفير دلوقتي — التصفير بيحصل لوحده كل أسبوع لما الدورة تتغيّر.
    - البطولات بتتخزن في جدول tournaments، يعني البطولة تفضل شغالة
@@ -7464,7 +7628,7 @@ window.tourRender=tourRender=function(){
 
 <script>
 /* ================= تحديث v6 =================
-   1) المضيف يفضل المضيف — مفيش نقل استضافة. البطولة محفوظة على السيرفر (Lovable Cloud)
+   1) المضيف يفضل المضيف — مفيش نقل استضافة. البطولة محفوظة على السيرفر (Firebase Cloud)
       وأي لاعب متصل بيكمّل الحفظ نيابة عنه من غير ما يتغيّر اسم المضيف.
    2) القرعة بتتعرض عند كل اللاعبين (نفس المواجهات) مع إشعار.
    3) الخروج من الموقع مش انسحاب — الانسحاب بيتحسب جوه الجيم بس، وبنصبر 15 ثانية.
