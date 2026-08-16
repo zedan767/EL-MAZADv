@@ -682,14 +682,6 @@ body{text-rendering:optimizeSpeed}
 <button class="big-btn goldb" style="margin-top:10px" onclick="refreshLobbyList()">🔄 تحديث القائمة</button>
 </div>
 </div>
-<div id="tourHome" class="screen hidden">
-<div class="hdr"><button class="back" onclick="tourExitHome()">↩ رجوع</button><h1>🏆 البطولات</h1></div>
-<div class="card tour-hero">
-<div class="tour-hero-t">🥇 بطولة كأس العالم</div>
-<div class="desc" style="margin-bottom:6px">ادخل بطولة بكودها، أو اعمل بطولتك وشارك الكود مع أصحابك. القرعة عشوائية 100% (Fisher–Yates بأرقام تشفيرية) والنظام إقصائي زي كأس العالم: دور أول ➜ ... ➜ النهائي. تقدر تظبط الميزانية ووقت التفكير قبل الإنشاء.</div>
-<div class="tour-you">بتلعب باسم: <b id="tourNameShow">—</b> <button class="tour-edit" onclick="tourEditName()">✏️ غيّر الاسم</button></div>
-<input id="tourName" type="hidden">
-</div>
 
 <div class="card">
 <div class="set-h">🔎 ابحث عن بطولة بالكود</div>
@@ -717,24 +709,8 @@ body{text-rendering:optimizeSpeed}
 <button class="gt-btn" id="tgt-transferprice" onclick="tourPickGt('transferprice')"><span class="gt-ic">💰</span><span class="gt-nm">راجع سعرك</span></button>
 <button class="gt-btn" id="tgt-blind" onclick="tourPickGt('blind')"><span class="gt-ic">🕶️</span><span class="gt-nm">المزاد الأعمى</span></button>
 </div>
-<div class="opt-lbl">⏱️ وقت التفكير في مباريات البطولة <span id="tourTimeVal">20 ث</span></div>
-<input type="range" id="tourTime" min="0" max="60" step="5" value="20" oninput="tourUpdTime(this.value)">
-<div style="font-size:11px;color:var(--dim);margin-top:-2px">اسحب لأقصى اليسار (0) لتعطيل التايمر في كل مباريات البطولة</div>
-<div class="opt-lbl">💰 ميزانية الفريق في البطولة <span id="tourBudVal">500 مليون</span></div>
-<input type="range" id="tourBud" min="50" max="1000" step="50" value="500" oninput="tourUpdBud(this.value)">
-<div class="opt-lbl">☁️ البطولة محفوظة على السيرفر</div>
-<div class="desc" style="margin-bottom:6px">البطولة بتتخزن على السيرفر وبتفضل شغالة حتى لو قفلت المتصفح — والمضيف يفضل هو المضيف زي ما هو، ومحدش بيتشال لمجرد إنه خرج من الموقع.</div>
-<input id="tourPass" placeholder="🔒 كلمة سر للبطولة (اختياري)" maxlength="20" style="text-align:center;margin-top:10px">
-<button class="big-btn green" style="margin-top:10px" onclick="tourCreate()">🏆 إنشاء البطولة</button>
-<div id="tourCreateStatus" class="status"></div>
-</div>
-</div>
 
-<div id="tourRoom" class="screen hidden">
-<div class="hdr"><button class="back" onclick="tourGoBackground()">↩ رجوع (تفضل شغالة)</button><h1 id="tourRoomTitle">🏆 البطولة</h1><button class="back" onclick="tourLeave()">🚪 خروج نهائي</button></div>
-<div class="card" id="tourInfoCard"></div>
-<div id="tourBody"></div>
-</div>
+
 <div id="wait" class="screen hidden"><div class="hdr"><button class="back" onclick="leaveRoom()">↩ رجوع</button><h1>اتصال</h1></div><div class="card" style="text-align:center"><p id="waitTxt">تم الانضمام.<br>بانتظار بدء المضيف…</p><button class="big-btn" style="margin-top:12px;background:var(--red,#e0245e);color:#fff" onclick="leaveRoom()">🚪 خروج من الغرفة</button></div></div>
 <div id="game" class="screen hidden">
 <div class="hdr"><button class="back" onclick="exitGame()">↩ خروج</button><h1 id="gameTitle">⚽ مزاد النجوم</h1></div>
@@ -771,18 +747,6 @@ body{text-rendering:optimizeSpeed}
 <div id="viewSquads" class="hidden"></div>
 <div id="viewBoxes" class="hidden"></div>
 <div id="viewTP" class="hidden"></div><div id="viewGP" class="hidden"></div>
-</div>
-<div id="overlay" class="overlay hidden"><div class="obox" id="obox"></div></div>
-<div id="friendsOv" class="overlay hidden"><div class="obox"><h2>👥 قائمة الأصدقاء</h2><div id="friendsList"></div><button class="big-btn red" style="margin-top:10px" onclick="closeFriends()">✖ إغلاق</button></div></div>
-<div id="lbOv" class="overlay hidden" onclick="if(event.target===this)closeLeaderboard()"><div class="obox lb-obox">
-<div class="lb-close-fixed"><h2>🏆 قائمة المتصدرين</h2><button class="lb-x" onclick="closeLeaderboard()">✖</button></div>
-<div class="lb-obox-body">
-<div class="desc" style="margin-bottom:8px">مباريات ضد لاعب حقيقي بس (مش الحاسوب): النقط zero-sum — الفايز بياخد نقط (كل ما فارق الأهداف يكون أقل كل ما القيمة أكبر لحد 20 نقطة + بونص الفوز المتتالي 🔥) والخاسر يخسر نفس العدد بالظبط. التعادل الاتنين بياخدوا نقط على حسب الأهداف (0-0 = 2 نقطة، 1-1 = 3، 2-2 = 4، وأقصى حد 5). في آخر كل ماتش هتشوف انت خدت كام أو خسرت كام، والتصنيف بيوضح عدد الفوز والتعادل والخسارة. اللي بيخرج من الماتش قبل ما يخلص مفيش نقط بتتحسب له ولا عليه.</div>
-<div id="lbPromo"></div>
-<div class="lb-tabs">
-<button id="lbt0" class="sel" onclick="setLbTab('all')">🏆 التصنيف العام</button>
-<button id="lbt1" onclick="setLbTab('season')">📅 الموسم</button>
-<button id="lbt2" onclick="setLbTab('h2h')">⚔️ مواجهاتي</button>
 </div>
 <div id="lbMe" class="lb-me hidden"></div>
 <div id="lbList">جارٍ التحميل…</div>
