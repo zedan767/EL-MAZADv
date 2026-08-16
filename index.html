@@ -1,4 +1,10 @@
-<html lang="ar" dir="rtl"><head><style>#mzBackBtn{position:fixed;top:10px;left:10px;z-index:99998;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)}#mzBackBtn.tour{background:var(--gold);color:#20180a;border-color:var(--gold)}</style><style>.mz-adm{display:flex;gap:6px;justify-content:center;margin-top:6px;flex-wrap:wrap}.mz-adm button{border-radius:10px;padding:6px 10px;font-weight:900;font-size:12px;cursor:pointer;border:1px solid;font-family:inherit}.mz-adm .mz-ping{background:rgba(210,153,34,.18);border-color:var(--gold);color:var(--gold)}.mz-adm .mz-kick{background:rgba(248,81,73,.18);border-color:var(--red);color:var(--red)}.mz-adm button:active{transform:scale(.96)}.mz-admtag{display:block;text-align:center;font-size:11px;color:var(--dim);margin:6px 0}</style><style>.lb-row{display:flex;align-items:center;gap:8px}.lb-row .lb-name{font-weight:900}.lb-row .lb-sub{font-size:11px;opacity:.75;line-height:1.7}.lb-pts{margin-inline-start:auto}</style></head><body>
+<html lang="ar" dir="rtl"><head><style>#mzBackBtn{position:fixed;top:10px;left:10px;z-index:99998;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)}#mzBackBtn.tour{background:var(--gold);color:#20180a;border-color:var(--gold)}</style><style>.mz-adm{display:flex;gap:6px;justify-content:center;margin-top:6px;flex-wrap:wrap}.mz-adm button{border-radius:10px;padding:6px 10px;font-weight:900;font-size:12px;cursor:pointer;border:1px solid;font-family:inherit}.mz-adm .mz-ping{background:rgba(210,153,34,.18);border-color:var(--gold);color:var(--gold)}.mz-adm .mz-kick{background:rgba(248,81,73,.18);border-color:var(--red);color:var(--red)}.mz-adm button:active{transform:scale(.96)}.mz-admtag{display:block;text-align:center;font-size:11px;color:var(--dim);margin:6px 0}</style><style>.lb-row{display:flex;align-items:center;gap:8px}.lb-row .lb-name{font-weight:900}.lb-row .lb-sub{font-size:11px;opacity:.75;line-height:1.7}.lb-pts{margin-inline-start:auto}</style></head><body><script async="" src="https://www.clarity.ms/tag/xzcxp2drrt"></script><script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "xzcxp2drrt");
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1220">
@@ -8,8 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&amp;display=swap" rel="stylesheet">
 <script defer="" src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <style>
  body {
   -webkit-user-select: none; /* Safari */
@@ -2486,7 +2491,7 @@ var ICE=[
  /* STUN: قائمة قصيرة وسريعة (السيرفرات الميتة كانت تبطّئ الاتصال) */
  {urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']},
  /* TURN: حساب ExpressTurn الخاص بالموقع (100 جيجا/شهر مخصصة) — أولوية أولى */
- {urls:'turn::3478',username:'000000002102018145',credential:'LzT2VGswecxzHVEZtyW+3wdvYZ0='},
+ {urls:'turn:free.expressturn.com:3478',username:'000000002102018145',credential:'LzT2VGswecxzHVEZtyW+3wdvYZ0='},
  {urls:'turn:free.expressturn.com:3478?transport=tcp',username:'000000002102018145',credential:'LzT2VGswecxzHVEZtyW+3wdvYZ0='},
  /* احتياطي: الحسابات العامة المشتركة (fallback فقط لو حساب ExpressTurn وصل لحده الشهري) */
  {urls:'turn:standard.relay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
@@ -3013,130 +3018,25 @@ function setView(v){
    بدل الاتصال المباشر بين الجهازين (P2P) اللي بيفشل على شبكات كتير،
    كل الرسائل بتمر عبر سيرفر ويب-سوكِت ثابت. يعني الاتصال بيشتغل
    مهما كانت المسافة أو نوع الشبكة أو الجوال، وبيرجع لوحده لو النت قطع. */
-var SB_URL='https://el-mazad132-default-rtdb.europe-west1.firebasedatabase.app/';
-var SB_KEY='',sbc=null,firebaseApp=null,firebaseDb=null;
-var firebaseConfig={apiKey:"AIzaSyDeLxhf_fmwsCvCebkmA4TgDZAE7leleWM",authDomain:"el-mazad132.firebaseapp.com",databaseURL:"https://el-mazad132-default-rtdb.europe-west1.firebasedatabase.app/",projectId:"el-mazad132",storageBucket:"el-mazad132.firebasestorage.app",messagingSenderId:"514282913100",appId:"1:514282913100:web:4ac41f7adf8346fcbf23e9"};
-firebaseConfig.apiKey="AIzaSyDeLxhf_fmwsCvCebkmA4TgDZAE7EleWM";
-function firebaseInit(){
- if(firebaseApp)return firebaseApp;
- var F=window.firebase;
- if(!F||!F.database)return null;
- try{
-  firebaseApp=F.apps&&F.apps.length?F.app():F.initializeApp(firebaseConfig);
-  firebaseDb=F.database(firebaseApp);
- }catch(e){console.error('Firebase init error',e);return null;}
- return firebaseApp;
-}
-function sbLib(){return window.firebase&&firebase.database?firebase:null;}
+var SB_URL='https://itdtszwmjiwcalhruric.supabase.co';
+var SB_KEY='sb_publishable_kNTkcktZDOcm36anGPz4wA_FHIFXp7k';
+var sbc=null;
+function sbLib(){return (typeof window!=='undefined'&&window.supabase&&window.supabase.createClient)?window.supabase:null;}
 function sbReady(){return !!sbLib();}
-function FirebaseChannel(name){
- this.name=name;this.base='channels/'+encodeURIComponent(name);
- this.callbacks={};this.presenceCallbacks={sync:[],join:[],leave:[]};
- this.presenceCache={};this.msgRef=null;this.presRef=null;this.dead=false;this._sub=false;
-}
-FirebaseChannel.prototype.on=function(type,filter,cb){
- var ev=filter&&filter.event;
- if(type==='broadcast'&&ev)(this.callbacks[ev]=this.callbacks[ev]||[]).push(cb);
- else if(type==='presence'&&ev&&this.presenceCallbacks[ev])this.presenceCallbacks[ev].push(cb);
- return this;
-};
-FirebaseChannel.prototype.subscribe=function(cb){
- var db=firebaseInit()&&firebaseDb,self=this;
- if(!db){if(cb)cb('CHANNEL_ERROR');return this;}
- this.msgRef=db.ref(this.base+'/messages').limitToLast(40);
- this.presRef=db.ref(this.base+'/presence');
- this.msgRef.on('child_added',function(snap){
-  var m=snap.val();
-  if(self.dead||!m||m.from===myCid)return;
-  (self.callbacks[m.event]||[]).forEach(function(fn){try{fn({payload:m.payload});}catch(e){}});
- });
- this.presRef.on('value',function(snap){
-  if(self.dead)return;
-  var v=snap.val()||{},old=self.presenceCache;
-  self.presenceCache=v;
-  if(!self._sub){self._sub=true;if(cb)cb('SUBSCRIBED');}
-  (self.presenceCallbacks.sync||[]).forEach(function(fn){try{fn();}catch(e){}});
-  Object.keys(v).forEach(function(k){
-   if(!old[k])(self.presenceCallbacks.join||[]).forEach(function(fn){try{fn({key:k,newPresences:[v[k]]});}catch(e){}});
-  });
-  Object.keys(old).forEach(function(k){
-   if(!v[k])(self.presenceCallbacks.leave||[]).forEach(function(fn){try{fn({key:k});}catch(e){}});
-  });
- });
- return this;
-};
-FirebaseChannel.prototype.track=function(data){
- var db=firebaseInit()&&firebaseDb;
- if(!db||this.dead)return Promise.reject('firebase');
- var key=encodeURIComponent(myCid),ref=db.ref(this.base+'/presence/'+key),val={};
- Object.keys(data||{}).forEach(function(k){val[k]=data[k];});
- val.c=myCid;this.presenceCache[key]=val;
- ref.set(val);try{ref.onDisconnect().remove();}catch(e){}
- return Promise.resolve();
-};
-FirebaseChannel.prototype.untrack=function(){
- var db=firebaseInit()&&firebaseDb;if(!db)return Promise.resolve();
- return db.ref(this.base+'/presence/'+encodeURIComponent(myCid)).remove();
-};
-FirebaseChannel.prototype.presenceState=function(){
- var out={};Object.keys(this.presenceCache).forEach(function(k){out[k]=[this.presenceCache[k]];},this);return out;
-};
-FirebaseChannel.prototype.send=function(msg){
- var db=firebaseInit()&&firebaseDb;
- if(!db||this.dead)return Promise.reject('firebase');
- return db.ref(this.base+'/messages').push().set({
-  from:myCid,event:(msg&&msg.event)||'message',payload:msg&&msg.payload,ts:Date.now()
- });
-};
-FirebaseChannel.prototype.close=function(){
- if(this.dead)return;this.dead=true;
- try{if(this.msgRef)this.msgRef.off();}catch(e){}
- try{if(this.presRef)this.presRef.off();}catch(e){}
- try{this.untrack();}catch(e){}
-};
-function FirebaseTable(table){this.table=table;this.filters=[];this.limitN=null;this.single=false;this.del=false;}
-FirebaseTable.prototype.select=function(){return this;};
-FirebaseTable.prototype.eq=function(k,v){this.filters.push({k:k,v:String(v)});return this;};
-FirebaseTable.prototype.limit=function(n){this.limitN=n;return this;};
-FirebaseTable.prototype.maybeSingle=function(){this.single=true;return this._run();};
-FirebaseTable.prototype.upsert=function(row){
- var db=firebaseInit()&&firebaseDb;if(!db)return Promise.reject('firebase');
- var key=String(row.code||row.id||row.name||Date.now()).replace(/[.#$/\[\]]/g,'_');
- return db.ref('db/'+this.table+'/'+key).set(row).then(function(){return {data:row,error:null};});
-};
-FirebaseTable.prototype.delete=function(){this.del=true;return this;};
-FirebaseTable.prototype.then=function(resolve,reject){return this._run().then(resolve,reject);};
-FirebaseTable.prototype._run=function(){
- var self=this,db=firebaseInit()&&firebaseDb;if(!db)return Promise.reject('firebase');
- return db.ref('db/'+self.table).once('value').then(function(snap){
-  var v=snap.val()||{},rows=[];
-  Object.keys(v).forEach(function(k){
-   var r=v[k];
-   if(r&&self.filters.every(function(f){return String(r[f.k])===String(f.v);}))rows.push(r);
-  });
-  if(self.del){
-   var jobs=[];
-   Object.keys(v).forEach(function(k){
-    var r=v[k];
-    if(r&&self.filters.every(function(f){return String(r[f.k])===String(f.v);}))
-      jobs.push(db.ref('db/'+self.table+'/'+k).remove());
-   });
-   return Promise.all(jobs).then(function(){return {data:null,error:null};});
-  }
-  if(self.limitN!=null)rows=rows.slice(0,self.limitN);
-  return {data:self.single?(rows[0]||null):rows,error:null};
- });
-};
 function sbClient(){
  if(sbc)return sbc;
- firebaseInit();
- return sbc={
-  channel:function(name){return new FirebaseChannel(name);},
-  removeChannel:function(ch){try{ch.close();}catch(e){}return Promise.resolve();},
-  from:function(table){return new FirebaseTable(table);}
- };
+ var L=sbLib();if(!L)return null;
+ sbc=L.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},realtime:{params:{eventsPerSecond:20}}});
+ return sbc;
 }
-
+/* تسخين السوكِت من أول ما الصفحة تفتح: كده لما تدوس اتصال بيبقى الاتصال جاهز فورًا */
+var sbWarmT=null;
+function sbWarm(){
+ var c=sbClient();
+ if(!c){sbWarmT=setTimeout(sbWarm,300);return;}
+ try{if(c.realtime&&!c.realtime.isConnected())c.realtime.connect();}catch(e){}
+}
+try{sbWarm();window.addEventListener('online',sbWarm);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')sbWarm();});}catch(e){}
 /* ========= تصنيف المتصدرين (Leaderboard) =========
    كل فوز حقيقي (مش ضد الحاسوب) في مزاد النجوم أو صناديق الحظ بيسجل نقط.
    ما بيحتاجش أي إعداد أو جدول تعمله بنفسك: النقط بتتخزن على جهازك
@@ -3639,7 +3539,7 @@ function makeNetConn(code,host,opts){
    try{c.removeChannel(ch);}catch(e){}
    ch=newChannel();shim._ch=ch;bindCh();
    recovering=false;
-   try{ch.subscribe(onStatus);}catch(e){recovering=false;setTimeout(function(){resubscribe('retry');},1500);}
+   try{ch.subscribe(onStatus);}catch(e){recovering=false;setTimeout(function(){resubscribe('retry');},700);}
   },wait);
  }
  bindCh();
@@ -4610,7 +4510,7 @@ function mzEvent(ev,n){
   m.xp=(m.xp||0)+gained;
   mzSave(m);
   if(names.length)setTimeout(function(){toast('✅ مهمة اكتملت: '+names[0]+' (+'+gained+' XP)');},400);
-  if(mzLevel(m.xp)>lvBefore)setTimeout(function(){toast('🎖️ اترقيت للمستوى '+mzLevel(m.xp)+' — '+mzTier(mzLevel(m.xp)));},3000);
+  if(mzLevel(m.xp)>lvBefore)setTimeout(function(){toast('🎖️ اترقيت للمستوى '+mzLevel(m.xp)+' — '+mzTier(mzLevel(m.xp)));},1200);
   mzSyncBadges();renderMeta();
  }catch(e){}
 }
