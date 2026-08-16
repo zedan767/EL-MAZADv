@@ -280,77 +280,12 @@ input[type=range]{padding:0;height:34px;accent-color:var(--acc)}
 .fr-acc{background:var(--acc);color:#04180a}.fr-dec{background:var(--red);color:#1c0407}.fr-inv{background:var(--blue);color:#04101c}.fr-del{background:var(--card);color:var(--dim);border:1px solid var(--line)!important}
 
 /* ===== تحسينات الشكل + باكات UT ===== */
-body{background:radial-gradient(1200px 600px at 50% -10%,rgba(88,166,255,.10),transparent 60%),radial-gradient(900px 500px at 100% 100%,rgba(177,74,255,.08),transparent 60%),var(--bg) !important;background-attachment:fixed}
-.big-btn{box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .12s ease,filter .2s ease}
-.big-btn:hover{filter:brightness(1.08)}
-.tabs button{transition:all .18s ease}
-.tabs button.sel{background:linear-gradient(180deg,rgba(63,185,80,.16),transparent);box-shadow:0 0 0 1px rgba(63,185,80,.35) inset}
-.team{transition:border-color .2s ease,box-shadow .2s ease}
-.team.turn{box-shadow:0 0 0 1px rgba(63,185,80,.35),0 8px 24px rgba(63,185,80,.10)}
-.pcard{background:linear-gradient(180deg,var(--card),var(--card2));box-shadow:0 12px 30px rgba(0,0,0,.35)}
-.bid-num{text-shadow:0 0 18px rgba(210,153,34,.35)}
-.obox{box-shadow:0 24px 70px rgba(0,0,0,.6)}
-.box-title{font-size:18px;letter-spacing:.5px;text-shadow:0 0 16px rgba(210,153,34,.3)}
-.box-panel{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card2);border-radius:16px}
-.box-grid{gap:10px}
+
 
 /* الباك (Pack) بشكل Ultimate Team */
 .box-item.pack{
  aspect-ratio:.68;border:none;border-radius:12px;padding:0;
- background:
-  radial-gradient(120% 70% at 20% 0%,rgba(255,255,255,.18),transparent 55%),
-  linear-gradient(200deg,#7b2ff7 0%,#5d2bd6 28%,#2b6fd6 55%,#17c3c9 100%);
- box-shadow:0 8px 22px rgba(0,0,0,.5),0 0 0 2px rgba(255,215,120,.55) inset;
- overflow:hidden;position:relative;display:block;
- animation:packFloat 3.6s ease-in-out infinite;
-}
-.box-item.pack.pk1{background:radial-gradient(120% 70% at 20% 0%,rgba(255,255,255,.16),transparent 55%),linear-gradient(200deg,#0f2a5a 0%,#123f8a 35%,#2b8fd6 70%,#6fe3d2 100%)}
-.box-item.pack.pk2{background:radial-gradient(120% 70% at 20% 0%,rgba(255,255,255,.16),transparent 55%),linear-gradient(200deg,#3a0b4f 0%,#7b1fa2 35%,#c2185b 72%,#ff9a3c 100%)}
-.box-item.pack.pk3{background:radial-gradient(120% 70% at 20% 0%,rgba(255,255,255,.16),transparent 55%),linear-gradient(200deg,#12331f 0%,#1e7a45 38%,#2fbf71 70%,#d2e86a 100%)}
-.box-item.pack::after{
- content:'';position:absolute;inset:0;
- background:repeating-linear-gradient(115deg,rgba(255,255,255,.07) 0 8px,transparent 8px 20px);
- mix-blend-mode:overlay;pointer-events:none;
-}
-.box-item.pack .pack-shine{
- position:absolute;top:-60%;left:-70%;width:60%;height:220%;
- background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
- transform:rotate(18deg);animation:packShine 3.2s ease-in-out infinite;pointer-events:none;
-}
-.box-item.pack .pack-badge{
- position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:6px;
- background:linear-gradient(180deg,#ffe9a8,#d29922);color:#3a2503;
- display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;
- box-shadow:0 2px 6px rgba(0,0,0,.4);
-}
-.box-item.pack .pack-crest{
- position:absolute;top:50%;left:50%;transform:translate(-50%,-54%);
- width:52%;aspect-ratio:.82;
- background:linear-gradient(180deg,#0d1b3a,#0a1024);
- clip-path:polygon(50% 0,100% 16%,100% 62%,50% 100%,0 62%,0 16%);
- display:flex;align-items:center;justify-content:center;
- box-shadow:0 0 0 2px rgba(255,215,120,.75),0 6px 14px rgba(0,0,0,.45);
-}
-.box-item.pack .pack-crest b{
- font-size:15px;font-weight:900;letter-spacing:1px;
- background:linear-gradient(180deg,#ffe9a8,#d29922);-webkit-background-clip:text;background-clip:text;color:transparent;
-}
-.box-item.pack .pack-foot{
- position:absolute;bottom:6px;left:0;right:0;text-align:center;
- font-size:8.5px;font-weight:900;letter-spacing:1.5px;color:rgba(255,255,255,.85);
- text-shadow:0 1px 3px rgba(0,0,0,.6);
-}
-.box-item.pack:not(.locked):hover{transform:translateY(-3px) scale(1.02)}
-.box-item.pack:not(.locked):active{transform:scale(.95)}
-.box-item.pack.locked{filter:grayscale(.75) brightness(.55);animation:none}
-@keyframes packShine{0%{left:-70%}55%{left:130%}100%{left:130%}}
-@keyframes packFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-.box-item.opened{animation:packOpen .45s cubic-bezier(.2,.9,.25,1.2)}
-@keyframes packOpen{0%{transform:rotateY(80deg) scale(.85);opacity:0}100%{transform:none;opacity:1}}
-.box-item.opened.picked{box-shadow:0 0 0 2px var(--acc),0 10px 26px rgba(63,185,80,.25)}
-.box-item.opened.bonus{box-shadow:0 0 0 2px var(--purple),0 10px 26px rgba(177,74,255,.25)}
-.box-pickbtn{box-shadow:0 4px 12px rgba(63,185,80,.3)}
-
+ back
 
 /* ============ ديزاين جديد 2026 — محسّن للهاتف ============ */
 :root{
